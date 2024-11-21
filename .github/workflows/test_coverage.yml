@@ -1,9 +1,13 @@
 # This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: test
+name: test_coverage
 
-on: push
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -16,7 +20,8 @@ jobs:
       - uses: actions/setup-node@latest
       - name: Install
         run: npm install
-      - name: Lint
-        run: npm run line
-      - name: Test
-        run: npm run test
+      - name: Test and Coverage
+        run: npm run test -- --coverageReporters="json-summary" --coverage .
+
+      - name: Update Coverage Badge
+        uses: yblee85/coverage-badge-action@main

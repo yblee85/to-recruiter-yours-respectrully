@@ -4,7 +4,7 @@
   "description": "Automatically reply to recruiters who send vague/generic job opportunities",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint 'src/**'",
+    "lint": "eslint 'src/**' --no-error-on-unmatched-pattern",
     "test:cov": "jest --coverage",
     "test:watch": "jest --watch",
     "test": "jest"

@@ -1,3 +1,6 @@
+![Build Status](https://github.com/yblee85/to-recruiter-yours-respectrully/workflows/test/badge.svg)
+[![cov](https://yblee85.github.io/to-recruiter-yours-respectrully/badges/coverage.svg)](https://github.com/yblee85/to-recruiter-yours-respectrully/actions)
+
 # To recruiter, Yours repspectfully
 
 ## Background Story

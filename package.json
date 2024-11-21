@@ -1,5 +1,5 @@
 {
-  "name": "to-recruiter-yours-respectrully",
+  "name": "to-recruiter-yours-respectfully",
   "version": "1.0.0",
   "description": "Automatically reply to recruiters who send vague/generic job opportunities",
   "main": "index.js",

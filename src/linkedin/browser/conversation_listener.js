@@ -11,14 +11,16 @@ const getCookie = (key) => {
   }
 };
 
-class MessageController {
+class ConversationListener {
   VoyagerAPIRootUrl = "https://www.linkedin.com/voyager/api";
 
   constructor(opts) {
-    const { conversationsId, messagesId, ...rest } = opts;
-    this.conversationsId = conversationsId;
-    this.messagesId = messagesId;
+    const { conversationsQueryId, messagesQueryId, ...rest } = opts;
+    this.conversationsQueryId = conversationsQueryId;
+    this.messagesQueryId = messagesQueryId;
     this.opts = rest;
+
+    this.registry = new Set();
   }
 
   async initialize() {
@@ -37,13 +39,65 @@ class MessageController {
     };
   }
 
-  async fetchMessengerConversations() {
-    const conversationsUrl = `${this.VoyagerAPIRootUrl}/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.${this.conversationsId}&variables=(mailboxUrn:${encodeURIComponent(this.myInfo.hostIdentityUrn)})`;
+  register(observer) {
+    if(!this.registry.has(observer)) {
+      this.registry.add(observer);
+    }
+  }
+
+  deregister(observer) {
+    this.registry.delete(observer);
+  }
+
+  listen() {
+    if(this.cronJobId !== undefined) {
+      console.log("a cronjob is already running");
+      return ;
+    }
+
+    let {intervalInSec = 60} = this.opts;
+    
+    let tsStart = new Date().getTime();
+    let cronJobId = setInterval(async () => {
+      const messagedUsers = await this.fetchMessagedUsers();
+
+      const before = tsStart;
+      const now = new Date().getTime();
+      tsStart = now;
+
+      const newMessagedUsers = messagedUsers.filter(user => {
+        const { messageElements } = user;
+        if(messageElements.length === 0) return false;
+
+        let { deliveredAt } = messageElements[0];
+        
+        return before <= deliveredAt && deliveredAt <= now;
+      });
+
+      if(newMessagedUsers.length > 0 && this.registry.size > 0) {
+        this.registry.values().forEach(observer => {
+          newMessagedUsers.forEach(async newMsgUser => {
+            await observer.process(newMsgUser);
+          });
+        })
+      }
+    }, intervalInSec*1000);
+    
+    this.cronJobId = cronJobId;
+  }
+
+  stop() {
+    clearInterval(this.cronJobId);
+    this.cronJobId = undefined;
+  }
+
+  async fetchConversations() {
+    const conversationsUrl = `${this.VoyagerAPIRootUrl}/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.${this.conversationsQueryId}&variables=(mailboxUrn:${encodeURIComponent(this.myInfo.hostIdentityUrn)})`;
     return this.fetchWithCsrfToken(conversationsUrl);
   }
 
   async fetchMessagedUsers() {
-    const { data } = await this.fetchMessengerConversations();
+    const { data } = await this.fetchConversations();
     return data.messengerConversationsBySyncToken.elements.map(el => this.getUserInfoFromConversatoinElement(el)).compact();
   }
 
@@ -61,7 +115,7 @@ class MessageController {
   getUserInfoFromConversatoinElement(element) {
     const { conversationParticipants, messages, entityUrn, contentMetadata, categories } = element;
 
-    // Skip if it's a group chat
+    // Skip if it's not a 1-on-1 chat
     if(conversationParticipants.length !== 2) return;
 
     // You can't reply to sponsored/Ads message
@@ -78,7 +132,8 @@ class MessageController {
         from: {
           hostIdentityUrn: msgEl.actor.hostIdentityUrn
         },
-        text: msgEl.body.text.replaceAll("\n", " "),
+        body: msgEl.body.text.replaceAll("\n", " "),
+        subject: msgEl.subject,
         deliveredAt: msgEl.deliveredAt,
       }
     ));
@@ -96,4 +151,4 @@ class MessageController {
   }
 }
 
-module.exports = { MessageController };
+module.exports = { ConversationListener };

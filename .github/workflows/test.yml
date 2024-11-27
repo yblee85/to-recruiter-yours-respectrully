@@ -10,13 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: false
-    strategy:
-      matrix:
-        node-version: ["20.x"]
     steps:
       # Your original steps
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
       - name: Install
         run: npm install
       - name: Lint

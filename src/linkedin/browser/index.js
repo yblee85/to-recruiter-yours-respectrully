@@ -1,5 +1,5 @@
-// TODO
-// const { ConversationListener } = require('./conversation_listener.js');
+const { ConversationListener } = require('./conversation_listener.js');
+const { MessageResponder } = require('./message_responder.js');
 
 /**
  * Execute
@@ -11,19 +11,23 @@
 // message history
 //https://www.linkedin.com/voyager/api/voyagerMessagingGraphQL/graphql?queryId=messengerMessages.{RANDOM_STRING}&variables=(conversationUrn:urn:li:msg_conversation:({conversationEntityUrn}))
 
-// const VoyagerMessengerConversationsQueryId = 'changeme-required';
-// const VoyagerMessengerMessagesQueryId = 'changeme-optional';
+const VoyagerMessengerConversationsQueryId = 'changeme-required';
+const VoyagerMessengerMessagesQueryId = 'changeme-optional';
 
-// let responderOpts = {
-//   conversationsQueryId: VoyagerMessengerConversationsQueryId,
-//   messagesQueryId: VoyagerMessengerMessagesQueryId,
-//   intervalInSec: 5,
+let responderOpts = {
+  conversationsQueryId: VoyagerMessengerConversationsQueryId,
+  messagesQueryId: VoyagerMessengerMessagesQueryId,
+  intervalInSec: 5,
 
-//   minDistanceToRespond: 2,
+  minDistanceToRespond: 1,
+  minTextLength: 500,
+};
 
-//   delayBetweenUIActionsInMs: 500,
-// };
+const listener = new ConversationListener(responderOpts);
+await listener.initialize();
 
-// const delay = ms => new Promise((resolve, _) => {
-//   setTimeout(_ => resolve(), ms);
-// });
+const responder = new MessageResponder(listener.myInfo, responderOpts);
+listener.register(responder);
+
+listener.start();
+listener.stop();

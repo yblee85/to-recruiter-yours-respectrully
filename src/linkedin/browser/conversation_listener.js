@@ -25,6 +25,7 @@ const fetchWithCsrfToken = async (targetUrl, method = 'GET', body) => {
   });
 
   let liChunks = [];
+  console.log(resp);
   for await (const chunk of resp.body) {
     liChunks = [...liChunks, ...chunk];
   }

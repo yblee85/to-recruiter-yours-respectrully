@@ -11,13 +11,23 @@ const getMockFetchFn = (resp) =>
   jest.fn(() =>
     Promise.resolve({
       json: () => Promise.resolve(resp),
+      body: [resp],
     }),
   );
+
+const convertJsonToUnit8Arra = (input) => {
+  let str = JSON.stringify(input, null, 0);
+  let ret = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    ret[i] = str.charCodeAt(i);
+  }
+  return ret;
+};
 
 describe('LinkedIn - ConversationListener', () => {
   describe('initialize', () => {
     it('default', async () => {
-      fetch.mockImplementationOnce(getMockFetchFn(MeAPIResponseMock));
+      fetch.mockImplementationOnce(getMockFetchFn(convertJsonToUnit8Arra(MeAPIResponseMock)));
 
       const ctrl = new ConversationListener({});
       expect(ctrl.myInfo).toBeUndefined();

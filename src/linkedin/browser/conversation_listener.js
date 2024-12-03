@@ -14,6 +14,33 @@ const getCookie = (key) => {
   }
 };
 
+const fetchWithCsrfToken = async (targetUrl, method = 'GET', body) => {
+  const csrfTkn = getCookie('JSESSIONID');
+  const resp = await fetch(targetUrl, {
+    method,
+    headers: {
+      'csrf-token': csrfTkn,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  let liChunks = [];
+  console.log(resp);
+  for await (const chunk of resp.body) {
+    liChunks = [...liChunks, ...chunk];
+  }
+
+  let liUnit8 = new Uint8Array(liChunks);
+  const dec = new TextDecoder('utf-8');
+  const strRespBody = dec.decode(liUnit8);
+
+  try {
+    return JSON.parse(strRespBody);
+  } catch (_ex) {
+    return strRespBody;
+  }
+};
+
 class ConversationListener {
   VoyagerAPIRootUrl = 'https://www.linkedin.com/voyager/api';
 
@@ -28,7 +55,7 @@ class ConversationListener {
 
   async initialize() {
     const meUrl = `${this.VoyagerAPIRootUrl}/me`;
-    const { miniProfile } = await this.fetchWithCsrfToken(meUrl);
+    const { miniProfile } = await fetchWithCsrfToken(meUrl);
 
     this.myInfo = {
       firstName: miniProfile.firstName,
@@ -52,7 +79,7 @@ class ConversationListener {
     this.registry.delete(observer);
   }
 
-  listen() {
+  start(autoStopInMin = 0) {
     if (this.cronJobId !== undefined) {
       console.log('a cronjob is already running');
       return;
@@ -68,6 +95,8 @@ class ConversationListener {
       const now = new Date().getTime();
       tsStart = now;
 
+      console.log(`messagedUsers count: ${messagedUsers.length}`);
+
       const newMessagedUsers = messagedUsers.filter((user) => {
         const { messageElements } = user;
         if (messageElements.length === 0) return false;
@@ -78,6 +107,7 @@ class ConversationListener {
       });
 
       if (newMessagedUsers.length > 0 && this.registry.size > 0) {
+        console.log('newMessagedUsers', newMessagedUsers);
         this.registry.values().forEach((observer) => {
           newMessagedUsers.forEach(async (newMsgUser) => {
             await observer.process(newMsgUser);
@@ -87,16 +117,26 @@ class ConversationListener {
     }, intervalInSec * 1000);
 
     this.cronJobId = cronJobId;
+
+    if (autoStopInMin > 0) {
+      setTimeout(
+        () => {
+          this.stop();
+        },
+        autoStopInMin * 60 * 1000,
+      );
+    }
   }
 
   stop() {
     clearInterval(this.cronJobId);
     this.cronJobId = undefined;
+    console.log('Listener cron job stopped...');
   }
 
   async fetchConversations() {
     const conversationsUrl = `${this.VoyagerAPIRootUrl}/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.${this.conversationsQueryId}&variables=(mailboxUrn:${encodeURIComponent(this.myInfo.hostIdentityUrn)})`;
-    return this.fetchWithCsrfToken(conversationsUrl);
+    return fetchWithCsrfToken(conversationsUrl);
   }
 
   async fetchMessagedUsers() {
@@ -104,17 +144,6 @@ class ConversationListener {
     return data.messengerConversationsBySyncToken.elements
       .map((el) => this.getUserInfoFromConversatoinElement(el))
       .compact();
-  }
-
-  async fetchWithCsrfToken(targetUrl) {
-    const csrfTkn = getCookie('JSESSIONID');
-    const dataStream = await fetch(targetUrl, {
-      headers: {
-        'csrf-token': csrfTkn,
-      },
-    });
-
-    return await dataStream.json();
   }
 
   getUserInfoFromConversatoinElement(element) {
@@ -156,4 +185,4 @@ class ConversationListener {
   }
 }
 
-module.exports = { ConversationListener };
+module.exports = { ConversationListener, fetchWithCsrfToken };

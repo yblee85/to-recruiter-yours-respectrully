@@ -1,17 +1,10 @@
 const { ConversationListener } = require('./conversation_listener.js');
 const { MessageResponder } = require('./message_responder.js');
 
-/**
- * Execute
- **/
-
-// search text "/voyager/api/voyagerMessagingGraphQL/graphql" in browser developer tool - network
-// example: https://www.linkedin.com/voyager/api/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.{RANDOM_STRING}&variables=(mailboxUrn:{hostIdentityUrn})
-
-// message history
-//https://www.linkedin.com/voyager/api/voyagerMessagingGraphQL/graphql?queryId=messengerMessages.{RANDOM_STRING}&variables=(conversationUrn:urn:li:msg_conversation:({conversationEntityUrn}))
-
+// https://github.com/yblee85/to-recruiter-yours-respectfully/wiki/Find-VoyagerMessengerConversationsQueryId
 const VoyagerMessengerConversationsQueryId = 'changeme-required';
+
+// https://github.com/yblee85/to-recruiter-yours-respectfully/wiki/Find-VoyagerMessengerMessagesQueryId
 const VoyagerMessengerMessagesQueryId = 'changeme-optional';
 
 let responderOpts = {

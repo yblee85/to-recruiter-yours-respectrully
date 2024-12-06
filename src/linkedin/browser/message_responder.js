@@ -1,5 +1,3 @@
-const { fetchWithCsrfToken } = require('./conversation_listener');
-
 class MessageResponder {
   JobQualifierSubjectTokens = ['opportunity'];
   JobQualifierBodyTokens = [
@@ -28,13 +26,28 @@ class MessageResponder {
   ];
   SalaryQualifierTokens = ['compensation', 'salary', 'benefits'];
 
-  constructor(myInfo, opts) {
-    this.myInfo = myInfo;
+  constructor(client, opts) {
+    this.client = client;
 
     const { minDistanceToRespond = 1, minTextLength = 700, ...rest } = opts;
     this.minDistanceToRespond = minDistanceToRespond;
     this.minTextLength = minTextLength;
     this.opts = rest;
+  }
+
+  async initialize() {
+    const { miniProfile } = await this.client.fetchMe();
+
+    this.myInfo = {
+      firstName: miniProfile.firstName,
+      lastName: miniProfile.lastName,
+      headline: miniProfile.occupation,
+      hostIdentityUrn: miniProfile.dashEntityUrn,
+      distance: 0,
+      profilePictureRootUrl: miniProfile.picture['com.linkedin.common.VectorImage'].rootUrl,
+      conversationEntityUrn: undefined,
+      messageElements: [],
+    };
   }
 
   /*
@@ -69,29 +82,7 @@ class MessageResponder {
 
   async respondInLinkedIn(responseMsgPayload) {
     const { body, conversationEntityUrn: conversationUrn } = responseMsgPayload;
-    const trackingId = this.generateTrackingId();
-    const originToken = this.generateOriginToken();
-
-    const resp = await fetchWithCsrfToken(
-      'https://www.linkedin.com/voyager/api/voyagerMessagingDashMessengerMessages?action=createMessage',
-      'POST',
-      {
-        message: {
-          body: {
-            attributes: [],
-            text: body,
-          },
-          renderContentUnions: [],
-          conversationUrn,
-          originToken,
-        },
-        trackingId,
-        mailboxUrn: this.myInfo.hostIdentityUrn,
-        dedupeByClientGeneratedToken: false,
-      },
-    );
-
-    return resp;
+    return this.client.sendMessage(body, conversationUrn, this.myInfo.hostIdentityUrn);
   }
 
   // analyze message and return response message object if applicable
@@ -147,25 +138,6 @@ class MessageResponder {
   isFoundMatches(inputString, tokens, minMatches = 1) {
     const foundPatterns = getMatchedPatterns(inputString, tokens);
     return foundPatterns.length >= minMatches;
-  }
-
-  // https://github.com/tomquirk/linkedin-api/issues/168#issuecomment-868545454
-  generateTrackingId() {
-    let n = new Array(16);
-
-    for (let e, t = 0; t < 16; t++) {
-      0 == (3 & t) && (e = 4294967296 * Math.random());
-      n[t] = (e >>> ((3 & t) << 3)) & 255;
-    }
-
-    let trackingId = '';
-    for (let i = 0; i < n.length; i++) trackingId += String.fromCharCode(n[i]);
-
-    return trackingId;
-  }
-
-  generateOriginToken() {
-    return crypto.randomUUID();
   }
 
   generateResponseText(fromName, toName) {

@@ -1,3 +1,4 @@
+const { Client } = require('../../../src/linkedin/browser/client.js');
 const { ConversationListener } = require('../../../src/linkedin/browser/conversation_listener.js');
 const { MeAPIResponseMock } = require('../../mock/linkedin.js');
 
@@ -29,7 +30,9 @@ describe('LinkedIn - ConversationListener', () => {
     it('default', async () => {
       fetch.mockImplementationOnce(getMockFetchFn(convertJsonToUnit8Arra(MeAPIResponseMock)));
 
-      const ctrl = new ConversationListener({});
+      const client = new Client({});
+
+      const ctrl = new ConversationListener(client, {});
       expect(ctrl.myInfo).toBeUndefined();
 
       await ctrl.initialize();

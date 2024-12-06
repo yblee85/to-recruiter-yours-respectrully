@@ -47,8 +47,6 @@ class ConversationListener {
       const now = new Date().getTime();
       tsStart = now;
 
-      console.log(`messagedUsers count: ${messagedUsers.length}`);
-
       const newMessagedUsers = messagedUsers.filter((user) => {
         const { messageElements } = user;
         if (messageElements.length === 0) return false;

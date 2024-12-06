@@ -55,8 +55,8 @@ class Client {
     return fetchWithCsrfToken(meUrl);
   }
 
-  async fetchConversations() {
-    const conversationsUrl = `${this.VoyagerAPIRootUrl}/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.${this.conversationsQueryId}&variables=(mailboxUrn:${encodeURIComponent(this.hostIdentityUrn)})`;
+  async fetchConversations(hostIdentityUrn) {
+    const conversationsUrl = `${this.VoyagerAPIRootUrl}/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.${this.conversationsQueryId}&variables=(mailboxUrn:${encodeURIComponent(hostIdentityUrn)})`;
     return fetchWithCsrfToken(conversationsUrl);
   }
 

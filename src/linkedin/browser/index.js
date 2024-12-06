@@ -1,3 +1,4 @@
+const { Client } = require('./client.js');
 const { ConversationListener } = require('./conversation_listener.js');
 const { MessageResponder } = require('./message_responder.js');
 
@@ -7,19 +8,24 @@ const VoyagerMessengerConversationsQueryId = 'changeme-required';
 // https://github.com/yblee85/to-recruiter-yours-respectfully/wiki/Find-VoyagerMessengerMessagesQueryId
 const VoyagerMessengerMessagesQueryId = 'changeme-optional';
 
-let responderOpts = {
+const clientOpts = {
   conversationsQueryId: VoyagerMessengerConversationsQueryId,
   messagesQueryId: VoyagerMessengerMessagesQueryId,
-  intervalInSec: 5,
+};
+const linkedinClient = new Client(clientOpts);
 
+const listenerOpts = {
+  intervalInSec: 5,
+};
+const listener = new ConversationListener(linkedinClient, listenerOpts);
+await listener.initialize();
+
+const responderOpts = {
   minDistanceToRespond: 1,
   minTextLength: 500,
 };
-
-const listener = new ConversationListener(responderOpts);
-await listener.initialize();
-
-const responder = new MessageResponder(listener.myInfo, responderOpts);
+const responder = new MessageResponder(linkedinClient, responderOpts);
+await responder.initialize();
 listener.register(responder);
 
 listener.start();

@@ -1,61 +1,13 @@
-const getCookie = (key) => {
-  const foundCookie = document.cookie
-    .split(';')
-    .find((str) => str.trim().startsWith(`${key}=`))
-    ?.trim();
-  if (!foundCookie) return;
-
-  const [_, val] = foundCookie.split('=');
-
-  try {
-    return JSON.parse(val);
-  } catch (_ex) {
-    return val;
-  }
-};
-
-const fetchWithCsrfToken = async (targetUrl, method = 'GET', body) => {
-  const csrfTkn = getCookie('JSESSIONID');
-  const resp = await fetch(targetUrl, {
-    method,
-    headers: {
-      'csrf-token': csrfTkn,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  let liChunks = [];
-  console.log(resp);
-  for await (const chunk of resp.body) {
-    liChunks = [...liChunks, ...chunk];
-  }
-
-  let liUnit8 = new Uint8Array(liChunks);
-  const dec = new TextDecoder('utf-8');
-  const strRespBody = dec.decode(liUnit8);
-
-  try {
-    return JSON.parse(strRespBody);
-  } catch (_ex) {
-    return strRespBody;
-  }
-};
-
 class ConversationListener {
-  VoyagerAPIRootUrl = 'https://www.linkedin.com/voyager/api';
-
-  constructor(opts) {
-    const { conversationsQueryId, messagesQueryId, ...rest } = opts;
-    this.conversationsQueryId = conversationsQueryId;
-    this.messagesQueryId = messagesQueryId;
-    this.opts = rest;
+  constructor(client, opts) {
+    this.client = client;
+    this.opts = opts;
 
     this.registry = new Set();
   }
 
   async initialize() {
-    const meUrl = `${this.VoyagerAPIRootUrl}/me`;
-    const { miniProfile } = await fetchWithCsrfToken(meUrl);
+    const { miniProfile } = await this.client.fetchMe();
 
     this.myInfo = {
       firstName: miniProfile.firstName,
@@ -135,8 +87,7 @@ class ConversationListener {
   }
 
   async fetchConversations() {
-    const conversationsUrl = `${this.VoyagerAPIRootUrl}/voyagerMessagingGraphQL/graphql?queryId=messengerConversations.${this.conversationsQueryId}&variables=(mailboxUrn:${encodeURIComponent(this.myInfo.hostIdentityUrn)})`;
-    return fetchWithCsrfToken(conversationsUrl);
+    return this.client.fetchConversations();
   }
 
   async fetchMessagedUsers() {
@@ -185,4 +136,4 @@ class ConversationListener {
   }
 }
 
-module.exports = { ConversationListener, fetchWithCsrfToken };
+module.exports = { ConversationListener };

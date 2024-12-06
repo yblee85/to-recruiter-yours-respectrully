@@ -87,7 +87,7 @@ class ConversationListener {
   }
 
   async fetchConversations() {
-    return this.client.fetchConversations();
+    return this.client.fetchConversations(this.myInfo.hostIdentityUrn);
   }
 
   async fetchMessagedUsers() {

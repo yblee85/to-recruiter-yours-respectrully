@@ -19,6 +19,7 @@ class MessageResponder {
     'full remote',
     'fully remote',
     'fully-remote',
+    'remote-first',
     'hybrid',
     'onsite',
     'on-site',
@@ -73,7 +74,6 @@ class MessageResponder {
     if (this.isShouldRespond(userWithMessage)) {
       console.log('it should respond');
       const responseMsgPayload = this.getResponseMessagePayload(userWithMessage);
-      console.log('responseMsgPayload', responseMsgPayload);
       await this.respondInLinkedIn(responseMsgPayload);
     } else {
       console.log('it should not respond');
@@ -95,6 +95,7 @@ class MessageResponder {
     // it only has one element
     const [lastMsg] = messageElements;
     // last message is from myself? return;
+
     if (lastMsg.from.hostIdentityUrn === this.myInfo.hostIdentityUrn) return false;
 
     const { body, subject } = lastMsg;

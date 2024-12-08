@@ -90,9 +90,10 @@ class ConversationListener {
 
   async fetchMessagedUsers() {
     const { data } = await this.fetchConversations();
+
     return data.messengerConversationsBySyncToken.elements
       .map((el) => this.getUserInfoFromConversatoinElement(el))
-      .compact();
+      .filter((n) => n);
   }
 
   getUserInfoFromConversatoinElement(element) {

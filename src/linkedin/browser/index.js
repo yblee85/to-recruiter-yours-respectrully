@@ -15,7 +15,7 @@ const clientOpts = {
 const linkedinClient = new Client(clientOpts);
 
 const listenerOpts = {
-  intervalInSec: 5,
+  intervalInSec: 60,
 };
 const listener = new ConversationListener(linkedinClient, listenerOpts);
 await listener.initialize();
